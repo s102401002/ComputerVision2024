@@ -14,7 +14,7 @@ cv2.namedWindow('result',cv2.WINDOW_NORMAL)
 
 cv2.namedWindow('trackBar')
 cv2.createTrackbar('window_size', 'trackBar', 15, 200, empty)
-cv2.createTrackbar('const', 'trackBar', 2, 40, empty)
+cv2.createTrackbar('const', 'trackBar', 2, 50, empty)
 
 while True:
     window_size = cv2.getTrackbarPos('window_size', 'trackBar')
