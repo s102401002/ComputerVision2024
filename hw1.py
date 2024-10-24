@@ -72,15 +72,12 @@ def my_Entropy_based_thresholding(image):
     image_flat = image.flatten()
     hist, bin_edges = np.histogram(image_flat, bins=256, range=(0, 256))
     total_pixels = float(height * width)
-    
     hist = hist.astype(float)
-
     log_hist = np.zeros_like(hist)
     log_hist = log_hist.astype(float)
     for i in range(0, 256):
         if(hist[i] > 0):
             log_hist[i] = np.log(hist[i])
-
     max_entropy = -np.inf
     threshold = 0
     for t in range(0, 256):
@@ -96,7 +93,6 @@ def my_Entropy_based_thresholding(image):
         if h > max_entropy:
             max_entropy = h
             threshold = t
-    
     result = np.zeros_like(image)
     for i in range(height):
         for j in range(width):
@@ -133,8 +129,8 @@ def my_Gaussianfilter_processing(image, kernel_size, sigma):
                 window *= kernel
                 result[i][j][k] = np.sum(window)
     return result
-def my_vector_median_filter(image, kernel_size):
 
+def my_vector_median_filter(image, kernel_size):
     padding = kernel_size // 2
     height, width, colors = image.shape
     image = image.astype(np.float32)
@@ -149,10 +145,7 @@ def my_vector_median_filter(image, kernel_size):
                             window[i2 - i + padding][j2 - j + padding] = image[i][j][k]
                         else:
                             window[i2 - i + padding][j2 - j + padding] = image[i2][j2][k]
-                # print(window)
-                # break
                 window_flatten = window.flatten()
-
                 SumArray = [0] * (kernel_size* kernel_size)
                 for i2 in range(kernel_size* kernel_size):
                     for j2 in range(kernel_size* kernel_size):
@@ -162,30 +155,27 @@ def my_vector_median_filter(image, kernel_size):
                 
                 SumArray = sorted(SumArray)
                 result[i][j][k] = window_flatten[SumArray[(kernel_size* kernel_size)//2][1]]# find median
-
-    # result = np.clip(result, 0, 255).astype(np.uint8)
     return result
+
 if __name__ == "__main__":
     image = cv2.imread('img/lena.bmp', cv2.IMREAD_GRAYSCALE)
     if image is None:
         print("Error: Image not found.")
         sys.exit()
     image2 = cv2.imread('img/noise.bmp',cv2.IMREAD_COLOR)
-    # image2.fromarray(np.uint8(image2))
     if image2 is None:
         print("Error: Image not found.")
         sys.exit()
-    # mean_result = my_mean_thresholding(image, window_size=10, c=5)
-    # Niblack_result = my_Niblack_method(image, window_size=10, k=-0.25)
-    # Variance_result = my_Variance_based_thresholding(image)
-    # Entropy_result =my_Entropy_based_thresholding(image)
-    # Vector_median_filter_result = my_vector_median_filter(image2, 5)
-    Gaussianfilter_processing_filter_result = my_Gaussianfilter_processing(image2, kernel_size = 3, sigma = 1.5)
-    # Image.fromarray(mean_result).save('mean_thresholding_result.png')
-    # Image.fromarray(Niblack_result).save('Niblack_method_result.png')
-    # Image.fromarray(Variance_result).save('Variance_method_result.png')
-    # Image.fromarray(Entropy_result).save('Entropy_method_result.png')
-    # Image.fromarray(Vector_median_filter_result).save('Vector_median_filter_result.png')
-    # cv2.imwrite('Vector_median_filter_result.png', Vector_median_filter_result)
-    cv2.imwrite('Gaussianfilter_processing_filter_result.png', Gaussianfilter_processing_filter_result)
-    print("Thresholding complete.")
+    mean_result = my_mean_thresholding(image, window_size=10, c=5)
+    Niblack_result = my_Niblack_method(image, window_size=10, k=-0.25)
+    Variance_result = my_Variance_based_thresholding(image)
+    Entropy_result =my_Entropy_based_thresholding(image)
+    Vector_median_filter_result = my_vector_median_filter(image2, 5)
+    Gaussianfilter_processing_filter_result = my_Gaussianfilter_processing(image2, kernel_size = 5, sigma = 2)
+    Image.fromarray(mean_result).save('hw1_result/mean_thresholding_result.png')
+    Image.fromarray(Niblack_result).save('hw1_result/Niblack_method_result.png')
+    Image.fromarray(Variance_result).save('hw1_result/Variance_method_result.png')
+    Image.fromarray(Entropy_result).save('hw1_result/Entropy_method_result.png')
+    cv2.imwrite('hw1_result/Vector_median_filter_result.png', Vector_median_filter_result)
+    cv2.imwrite('hw1_result/Gaussianfilter_processing_filter_result.png', Gaussianfilter_processing_filter_result)
+    print("Complete.")
