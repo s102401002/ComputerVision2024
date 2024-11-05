@@ -109,6 +109,75 @@ def my_Canny_edge_detection(image, kernel_size, sigma):
     image = my_Gaussianfilter_processing(image, kernel_size, sigma)
     image = my_Sobel_edge_detection(image)
     
+def my_Dilation(image, kernel):
+    kernel_height, kernel_width = len(kernel), len(kernel[0])
+    paddingX = kernel_height // 2
+    paddingY = kernel_width // 2
+    height, width, color = image.shape
+    result = np.empty((height, width))
+    for i in range(0,height):
+        for j in range(0,width):
+            window = np.empty((kernel_height, kernel_width))
+            for i2 in range(i - paddingX, i + paddingX + 1):
+                for j2 in range(j - paddingY, j + paddingY + 1):
+                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
+                        window[i2 - i + paddingX][j2 - j + paddingY] = image[i][j][0]
+                    else:
+                        window[i2 - i + paddingX][j2 - j + paddingY] = image[i2][j2][0]
+            val = 0
+            for i2 in range(kernel_height):
+                if val == 255:
+                    break
+                for j2 in range(kernel_width):
+                    if val == 255:
+                        break
+                    if window[i2][j2] == 255 and kernel[i2][j2] == 255:
+                        val = 255
+            result[i][j] = val
+    return result
+    
+def my_Erosion(image, kernel):
+    kernel_height, kernel_width = len(kernel), len(kernel[0])
+    paddingX = kernel_height // 2
+    paddingY = kernel_width // 2
+    height, width, color = image.shape
+    result = np.empty((height, width))
+    for i in range(0,height):
+        for j in range(0,width):
+            window = np.empty((kernel_height, kernel_width))
+            for i2 in range(i - paddingX, i + paddingX + 1):
+                for j2 in range(j - paddingY, j + paddingY + 1):
+                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
+                        window[i2 - i + paddingX][j2 - j + paddingY] = image[i][j][0]
+                    else:
+                        window[i2 - i + paddingX][j2 - j + paddingY] = image[i2][j2][0]
+            val = 255
+            for i2 in range(kernel_height):
+                for j2 in range(kernel_width):
+                    if window[i2][j2] != 255:
+                        val = 0
+            result[i][j] = val
+    return result
+
+def my_Opening(image, kernel):
+    result = my_Erosion(image, kernel)
+    height, width = result.shape
+    temp_image = np.empty((height, width, 1))
+    for i in range(height):
+        for j in range(width):
+            temp_image[i][j][0] = result[i][j]
+    result = my_Dilation(temp_image, kernel)
+    return result
+
+def my_Closing(image, kernel):
+    result = my_Dilation(image, kernel)
+    height, width = result.shape
+    temp_image = np.empty((height, width, 1))
+    for i in range(height):
+        for j in range(width):
+            temp_image[i][j][0] = result[i][j]
+    result = my_Erosion(temp_image, kernel)
+    return result
 
 if __name__ == "__main__":
     image = cv2.imread('img/lena.bmp', cv2.IMREAD_GRAYSCALE)
@@ -121,6 +190,15 @@ if __name__ == "__main__":
         sys.exit()
     Sobel_result = my_Sobel_edge_detection(image=image)
     Prewitt_result = my_Prewitt_edge_detection(image=image)
+    kernel = [[255] * 3 for _ in range (3)]
+    Dilation_result = my_Dilation(image2, kernel)
+    Erosion_result = my_Erosion(image2, kernel)
+    Opening_result = my_Opening(image2, kernel)
+    Closing_result = my_Closing(image2, kernel)
     cv2.imwrite('hw2_result/sobel_result.png', Sobel_result)
     cv2.imwrite('hw2_result/prewitt_result.png', Prewitt_result)
+    cv2.imwrite('hw2_result/dilation_result.png', Dilation_result)
+    cv2.imwrite('hw2_result/erosion_result.png', Erosion_result)
+    cv2.imwrite('hw2_result/opening_result.png', Opening_result)
+    cv2.imwrite('hw2_result/closing_result.png', Closing_result)
     print("Complete.")
