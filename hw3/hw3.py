@@ -1,122 +1,10 @@
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import math
-def my_Gaussianfilter_processing(image, kernel_size, sigma):
-    padding = kernel_size // 2
-    height, width = image.shape
-    image = image.astype(np.float32)
-    kernel = np.empty((kernel_size, kernel_size))
-    sum = 0.0
-    for i in range(kernel_size):
-        for j in range(kernel_size):
-            x = i - padding
-            y = j - padding
-            kernel[i][j] = np.exp(-(x ** 2 + y ** 2) / 2 / sigma ** 2) / 2 / np.pi / (sigma ** 2)
-            sum += kernel[i][j]
-    kernel /= sum
-    result = np.zeros_like(image)
-    
-    for i in range(0,height):
-        for j in range(0,width):
-            window = np.empty((kernel_size, kernel_size))
-            for i2 in range(i - padding, i + padding + 1):
-                for j2 in range(j - padding, j + padding + 1):
-                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
-                        window[i2 - i + padding][j2 - j + padding] = image[i][j]
-                    else:
-                        window[i2 - i + padding][j2 - j + padding] = image[i2][j2]
-            window *= kernel
-            result[i][j] = np.sum(window)
-    return result
-def my_Canny_edge_detection(image, kernel_size, sigma):
-    image = my_Gaussianfilter_processing(image, kernel_size, sigma)
-    kernel_size = 3
-    padding = kernel_size // 2
-    height, width = image.shape
-    image = image.astype(np.float32)
-    kernelX = [[-1, -2, -1], [0, 0, 0], [1, 2, 1] ]
-    MX = np.zeros_like(image)
-    for i in range(0,height):
-        for j in range(0,width):
-            window = np.empty((kernel_size, kernel_size))
-            for i2 in range(i - padding, i + padding + 1):
-                for j2 in range(j - padding, j + padding + 1):
-                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
-                        window[i2 - i + padding][j2 - j + padding] = image[i][j]
-                    else:
-                        window[i2 - i + padding][j2 - j + padding] = image[i2][j2]
-            window *= kernelX
-            MX[i][j] = np.sum(window)
-
-    kernelY = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1] ]
-    MY = np.zeros_like(image)
-    for i in range(0,height):
-        for j in range(0,width):
-            window = np.empty((kernel_size, kernel_size))
-            for i2 in range(i - padding, i + padding + 1):
-                for j2 in range(j - padding, j + padding + 1):
-                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
-                        window[i2 - i + padding][j2 - j + padding] = image[i][j]
-                    else:
-                        window[i2 - i + padding][j2 - j + padding] = image[i2][j2]
-            window *= kernelY
-            MY[i][j] = np.sum(window)
-    M = np.zeros_like(image)
-    result = np.zeros_like(image)
-    for i in range(0,height):
-        for j in range(0,width):
-            M[i][j] = np.sqrt(MX[i][j]**2 + MY[i][j] ** 2)
-    for i in range(0,height):
-        for j in range(0,width):
-            window = np.empty((kernel_size, kernel_size))
-            for i2 in range(i - padding, i + padding + 1):
-                for j2 in range(j - padding, j + padding + 1):
-                    if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
-                        window[i2 - i + padding][j2 - j + padding] = M[i][j]
-                    else:
-                        window[i2 - i + padding][j2 - j + padding] = M[i2][j2]
-            theta = math.atan2(MY[i][j], MX[i][j])/math.pi*180
-            if (theta >= -157.5 and theta <= 157.5) or (theta >= -22.5 and theta <= 22.5):
-                if (window[1][1] > window[0][1] and window[1][1] > window[2][1]):
-                    result[i][j] = M[i][j]
-                else:
-                    result[i][j] = 0
-            elif (theta >= 112.5 and theta <= 157.5) or (theta >= -67.5 and theta <= -22.5):
-                if (window[1][1] > window[0][2] and window[1][1] > window[2][0]):
-                    result[i][j] = M[i][j]
-                else:
-                    result[i][j] = 0
-            elif (theta >= 67.5 and theta <= 112.5) or (theta >= -112.5 and theta <= -67.5):
-                if (window[1][1] > window[1][0] and window[1][1] > window[1][2]):
-                    result[i][j] = M[i][j]
-                else:
-                    result[i][j] = 0
-            else:
-                if (window[1][1] > window[0][0] and window[1][1] > window[2][2]):
-                    result[i][j] = M[i][j]
-                else:
-                    result[i][j] = 0
-    TL, TH = 20, 60
-    for i in range(0,height):
-        for j in range(0,width):
-            if(result[i][j] < TL):
-                result[i][j] = 0
-            if(result[i][j] > TL and result[i][j] < TH):
-                window = np.empty((kernel_size, kernel_size))
-                for i2 in range(i - padding, i + padding + 1):
-                    for j2 in range(j - padding, j + padding + 1):
-                        if i2 < 0 or j2 < 0 or i2 >= height or j2 >= width:
-                            window[i2 - i + padding][j2 - j + padding] = result[i][j]
-                        else:
-                            window[i2 - i + padding][j2 - j + padding] = result[i2][j2]
-                flag = False
-                for i2 in range(kernel_size):
-                    for j2 in range(kernel_size):
-                        if window[i2][j2] > TH:
-                            flag = True
-                if flag == False:
-                    result[i][j] = 0
-    return result
+import os
+from functools import lru_cache
 def compute_r_table(template_edges):
     rows, cols = template_edges.shape
     r_table = {}
@@ -129,53 +17,129 @@ def compute_r_table(template_edges):
                 dy = y - yc
                 angle = math.atan2(dy, dx)
                 # r = math.hypot(dx, dy) # sqrt(x*x + y*y)
-                angle = math.degrees(angle) # converts an angle from radians to degrees.
+                angle = math.degrees(angle) 
+                # converts an angle from radians to degrees.
                 if angle not in r_table:
                     r_table[angle] = []
                 r_table[angle].append([dx, dy])
     return r_table
-def generalized_hough_transform(reference, template):
-    """
-    實現廣義 Hough 轉換算法,檢測圖像中的目標形狀。
-    """
+
+@lru_cache(None)
+def get_cos_sin_values(angle_step):
+    angles_deg = np.linspace(0, 360, 360 // angle_step, endpoint=False)
+    angles_rad = np.deg2rad(angles_deg)
+    cos_values = np.cos(angles_rad)
+    sin_values = np.sin(angles_rad)
+    return cos_values, sin_values
+
+def generalized_hough_transform(reference, template, angle_step):
     # 1. 邊緣檢測
-    # edges = my_Canny_edge_detection(template, kernel_size=3, sigma=2)
-    edges = cv2.Canny(template, 50, 150)
-    r_table = compute_r_table(edges)
-
-    # 2. 在參考圖像上進行邊緣檢測
+    template_edges = cv2.Canny(template, 50, 150)
     reference_edges = cv2.Canny(reference, 50, 150)
+    # 2. 計算 R-table
+    r_table = compute_r_table(template_edges)
+    # 3. 創建accumulator, 所有角度的cos,sin值
     rows, cols = reference_edges.shape
+    cos_values, sin_values = get_cos_sin_values(angle_step)
+    accumulator = np.zeros((rows, cols, len(cos_values)), dtype=np.int32)
 
-    # 3. 創建一個累加器陣列
-    step = 1 # 角度的累加速度
-    accumulator = np.zeros((rows, cols, 360/ step), dtype=np.int32)
+    # 4. 獲取reference所有邊緣點
+    edge_points = np.argwhere(reference_edges == 255)
+    # 5. 投票過程
+    for y, x in edge_points:
+        # 根據 R-table 投票
+        for phi, vectors in r_table.items():
+            for v in vectors:
+                dx, dy = v
+                # 計算投票的 xc 和 yc 值 
+                # (直接乘以sin&cos陣列，產生length為360//angle_step的陣列)
+                xc = x - dx * cos_values + dy * sin_values
+                yc = y - dx * sin_values - dy * cos_values
+                # 轉換為整數並確保在圖像範圍內
+                xc = np.round(xc).astype(int)
+                yc = np.round(yc).astype(int)
+                # 篩選出有效的座標
+                valid = (0 <= xc) & (xc < cols) & (0 <= yc) & (yc < rows)
+                # 更新累加器
+                valid_x_c = xc[valid]
+                valid_y_c = yc[valid]
+                valid_angle_idx = np.arange(len(cos_values))[valid]
+                accumulator[valid_y_c, valid_x_c, valid_angle_idx] += 1
+    x, y, angle_idx = np.unravel_index(np.argmax(accumulator), accumulator.shape)
+    angle = angle_idx * angle_step
+    return x, y, angle
+def display_result(image, x, y, angle, box_size=(50, 50), ref='', tmp='', template_img=None):
+    # 將圖片轉換為 0~255 的範圍
+    result_image = np.clip(image, 0, 255).astype(np.uint8)
 
-    # 4. 對參考圖像中的邊緣點進行投票
-    for y in range(rows):
-        for x in range(cols):
-            if reference_edges[y, x] == 255:  # 邊緣點
-                # 根據 R-table 投票
-                for phi, vectors in r_table.items():
-                    for v in vectors:
-                        for theta_idx, theta in enumerate(range(0, 360, step)):
-                            theta = np.deg2rad(theta)
-                            dx = v[0]
-                            dy = v[1]
-                            xc = int(x - dx * np.cos(theta) + dy * np.sin(theta))
-                            yc = int(y - dx * np.sin(theta) - dy * np.cos(theta))
-                            # 確保投票在圖像範圍內
-                            if 0 <= xc < cols and 0 <= yc < rows:
-                                accumulator[yc, xc, theta_idx] += 1
+    # 使用 gridspec 將畫面分為上下兩部分
+    fig = plt.figure(figsize=(10, 10))
+    gs = fig.add_gridspec(2, 1, height_ratios=[1, 2])  # 上下部分的比例
 
-    return accumulator 
+    # 上半部顯示模板圖像及模板檔名
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax0.imshow(template_img, cmap="gray")
+    ax0.set_title(f"Template: {tmp}", fontsize=16)
+    ax0.axis("off")
 
-# 示例用法
-if __name__ == "__main__":
-    reference = cv2.imread('img/Refernce.png', cv2.IMREAD_GRAYSCALE)
-    template = cv2.imread('img/Template.png', cv2.IMREAD_GRAYSCALE)
+    # 下半部顯示邊緣檢測的結果
+    ax1 = fig.add_subplot(gs[1, 0])
+    ax1.imshow(result_image, cmap="gray")
+
+    # 繪製中心點 x, y是相反的
+    ax1.scatter(y, x, c='blue', s=20, label=f"Center (x={y}, y={x}, angle={angle}°)")
+
+    # 繪製方框
+    box_height, box_width = box_size
+    top_left_x = y - box_width // 2
+    top_left_y = x - box_height // 2
+    rect = patches.Rectangle(
+        (top_left_x, top_left_y),  
+        box_width,                
+        box_height,
+        linewidth=1,
+        edgecolor='yellow',
+        facecolor='none'
+    )
+    ax1.add_patch(rect)
+
+    ax1.legend(loc='upper right', fontsize=12)
+    ax1.set_title(f"Reference: {ref}", fontsize=16)
+    ax1.axis("off")
+
+    plt.tight_layout()
+    plt.savefig(f'hw3_result/result_{angle}.png')
+    plt.show()
     
-    result = generalized_hough_transform(reference, template)
+def rotate_template(angle):
+    template = cv2.imread('img/template/Template.png', cv2.IMREAD_GRAYSCALE)
+    template_path = 'img/template/Template.png'
+    base_name = os.path.splitext(os.path.basename(template_path))[0]  #img/template/Template
+    output_dir = os.path.dirname(template_path)  # img/template
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    h, w = template.shape
+    center = (w // 2, h // 2)
 
-    cv2.imwrite('hw3_result/test.png', result)
-    
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)  # 1.0是縮放比例
+    rotated_image = cv2.warpAffine(template, rotation_matrix, (w, h))
+
+    output_filename = f"{base_name}_{angle}.png"
+    output_path = os.path.join(output_dir, output_filename)
+    cv2.imwrite(output_path, rotated_image)
+def main():
+    reference_path = 'img/Refernce.png'
+    reference = cv2.imread(reference_path, cv2.IMREAD_GRAYSCALE)
+    angle_step = 1
+    angle =  int( input('輸入想要辨識的角度：') ) 
+    angle = angle % 360
+    print(angle)
+    template_path = 'img/template/Template_' + str(angle) + '.png'
+    if not os.path.exists(template_path):
+        rotate_template(angle)
+    template = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
+    x, y, angle = generalized_hough_transform(reference, template, angle_step)
+    display_result(reference, x, y, angle, box_size=template.shape, 
+                   ref=reference_path, tmp=template_path, template_img=template)
+if __name__ == '__main__':
+    main()
